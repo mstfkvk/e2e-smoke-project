@@ -1,1 +1,44 @@
+name: Cypress Tests
 
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "cypress/e2e/**"
+
+jobs:
+  testing-job:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: 1. Kodu Checkout Et
+        uses: actions/checkout@v4  # v6 yok, güncel sürüm v4
+
+      - name: 2. Cypress Testlerini Başlat
+        uses: cypress-io/github-action@v6
+        with:
+          browser: chrome
+
+      - name: 3. Raporu Canlı Link Olarak Yayınla
+        id: deploy-report  # ← EKLENDİ: alttaki steps.deploy-report.outputs.page_url için şart
+        uses: peaceiris/actions-gh-pages@v3
+        if: always()
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./cypress/reports/html
+
+      - name: 4. Slack Ekibine Haber Ver
+        uses: rtCamp/action-slack-notify@v2  # ← appleboy değil bu kullanılmalı
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}  # ← Secret olarak saklanmalı
+          SLACK_COLOR: ${{ job.status == 'success' && 'good' || 'danger' }}  # Dinamik renk
+          SLACK_TITLE: '🤖 Cypress E2E Test Sonucu'
+          SLACK_MESSAGE: |
+            *Branch*: `${{ github.ref_name }}`
+            *Durum*: ${{ job.status }}
+            Raporu incelemek için: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
