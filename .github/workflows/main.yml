@@ -4,10 +4,8 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "cypress/*/**"
 
-jobs:
+jobs:           
   testing-job:
     runs-on: ubuntu-latest
 
